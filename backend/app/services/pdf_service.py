@@ -1,26 +1,34 @@
 import fitz  # PyMuPDF
-from typing import List
-from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from app.core.config import settings
+from langchain.docstore.document import Document
+from typing import List
+import io
 
 class PDFService:
-    @staticmethod
-    async def process_pdf(file_bytes: bytes, filename: str) -> List[Document]:
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
+    def __init__(self):
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len,
+        )
+
+    def process_pdf(self, file_content: bytes, filename: str) -> List[Document]:
+        doc = fitz.open(stream=file_content, filetype="pdf")
         documents = []
         
         for page_num, page in enumerate(doc):
             text = page.get_text()
-            metadata = {
-                "source": filename,
-                "page": page_num + 1,
-            }
-            documents.append(Document(page_content=text, metadata=metadata))
+            if not text.strip():
+                continue
+                
+            chunks = self.text_splitter.split_text(text)
+            for chunk in chunks:
+                documents.append(Document(
+                    page_content=chunk,
+                    metadata={
+                        "source": filename,
+                        "page": page_num + 1
+                    }
+                ))
         
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=settings.CHUNK_SIZE,
-            chunk_overlap=settings.CHUNK_OVERLAP
-        )
-        
-        return text_splitter.split_documents(documents)
+        return documents
