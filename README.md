@@ -1,71 +1,74 @@
 # DocuChat AI
 
-DocuChat AI is a robust Multi-Document Retrieval-Augmented Generation (RAG) system designed to provide accurate, grounded answers from uploaded PDF documents. Leveraging Google's Gemini 1.5 Pro for reasoning and `text-embedding-004` for high-dimensional vector search, it ensures high-quality responses with mandatory source citations.
+DocuChat AI is a Multi-Document RAG (Retrieval-Augmented Generation) Assistant that allows users to upload multiple PDF documents and have a conversational interaction with their content. The system ensures strict grounding, meaning it only answers based on the provided documents and provides precise citations (Filename and Page Number).
 
 ## 🚀 Features
 
-- **Multi-PDF Ingestion:** Upload and query multiple documents simultaneously.
-- **Session Isolation:** Documents are tied to a specific `session_id`, ensuring data privacy between users.
-- **Smart Chunking:** Uses `RecursiveCharacterTextSplitter` with metadata tagging (filename, page number).
-- **Grounded Reasoning:** Strict system prompts prevent hallucinations by forcing the model to answer only based on provided context.
-- **Automatic Memory Management:** Uses `TTLCache` to automatically clear session data after 1 hour of inactivity, preventing memory leaks.
-- **Concurrency Handling:** Built-in `SessionLockManager` to prevent race conditions during document processing.
+- **Multi-PDF Ingestion**: Upload and process multiple PDF files simultaneously.
+- **Session Isolation**: Your documents and chats are isolated using unique session IDs.
+- **Strict Grounding**: The AI is instructed to only use the provided context to prevent hallucinations.
+- **Verifiable Citations**: Every claim made by the AI includes a reference to the source document and page number.
+- **Real-time Chat**: Responsive React-based interface with Markdown support.
 
 ## 🛠️ Tech Stack
 
-- **LLM:** Google Gemini 1.5 Pro
-- **Embeddings:** Google `text-embedding-004`
-- **Backend:** Python 3.10+, FastAPI
-- **Vector Store:** FAISS (In-memory with session-based TTL)
-- **PDF Processing:** PyMuPDF (fitz)
-- **Orchestration:** LangChain
+- **Backend**: FastAPI (Python 3.9+)
+- **Frontend**: React, Tailwind CSS, TypeScript
+- **LLM & Embeddings**: Google Gemini 1.5 (Flash/Pro)
+- **Vector Database**: FAISS (Local persistence per session)
+- **PDF Processing**: PyMuPDF (fitz)
 
 ## 📋 Prerequisites
 
-- Python 3.10 or higher
-- A Google Cloud Project with Vertex AI enabled or a Google AI Studio API Key.
+- Python 3.9 or higher
+- Node.js 18+ and npm
+- Google AI Studio API Key (for Gemini)
 
-## ⚙️ Installation
+## 🔧 Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-repo/docuchat-ai.git
-   cd docuchat-ai
-   ```
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-repo/docuchat-ai.git
+cd docuchat-ai
+```
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 2. Backend Setup
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-3. **Set up environment variables:**
-   Create a `.env` file in the root directory:
-   ```env
-   GOOGLE_API_KEY=your_google_api_key_here
-   ```
+Create a `.env` file in the `backend` directory:
+```env
+GOOGLE_API_KEY=your_gemini_api_key_here
+```
 
-4. **Run the application:**
-   ```bash
-   uvicorn main:app --reload
-   ```
+Run the server:
+```bash
+uvicorn app.main:app --reload
+```
+
+### 3. Frontend Setup
+```bash
+cd ../frontend
+npm install
+```
+
+Run the development server:
+```bash
+npm run dev
+```
 
 ## 🏗️ Architecture
 
-1. **Ingestion Pipeline:**
-   - PDF is uploaded via `/upload`.
-   - `PyMuPDF` extracts text per page.
-   - `RecursiveCharacterTextSplitter` breaks text into 1000-token chunks.
-   - `text-embedding-004` generates vectors.
-   - Vectors are stored in a session-specific FAISS index.
+1.  **Ingestion Layer**: PDFs are parsed using PyMuPDF. Text is extracted page-by-page to preserve metadata.
+2.  **Vector Store**: Text chunks are converted into embeddings using Gemini and stored in a session-specific FAISS index.
+3.  **Retrieval**: When a user asks a question, the system performs a similarity search against the session's FAISS index.
+4.  **Generation**: The retrieved context and the user's query are sent to Gemini with a strict system prompt to generate a grounded response.
 
-2. **RAG Query Pipeline:**
-   - User sends a query via `/chat`.
-   - The system performs a similarity search in the session's FAISS index.
-   - Top-k relevant chunks are retrieved.
-   - Gemini 1.5 Pro generates a response using the chunks as context, citing sources in `[Filename - Page X]` format.
-
-## 🛡️ Safety & Reliability
-
-- **Safety Filters:** The system validates Gemini response candidates to handle blocked content gracefully.
-- **Race Condition Prevention:** Async locks ensure that multiple uploads to the same session are processed sequentially.
-- **Memory Safety:** Session data is automatically evicted after 1 hour of inactivity.
+## ⚠️ Limitations
+- **No OCR**: Scanned images or PDFs without a text layer cannot be read.
+- **PDF Only**: Currently only supports `.pdf` files.
+- **Stateless MVP**: Vector indices are stored locally; clearing the `storage/` directory or changing session IDs will reset the context.
