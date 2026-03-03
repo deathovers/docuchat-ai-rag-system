@@ -1,79 +1,81 @@
-# API Documentation - DocuChat AI
+# DocuChat AI - API Documentation
 
-The DocuChat AI API provides endpoints for document management and conversational AI retrieval.
+The DocuChat AI API provides endpoints for document management and conversational RAG.
 
-## Base URL
-`http://localhost:8000`
-
----
+**Base URL**: `http://localhost:8000`
 
 ## 1. Document Management
 
-### Upload Document
-Uploads a PDF file and indexes it for the current session.
+### Upload Documents
+`POST /v1/upload`
 
-- **Endpoint:** `POST /upload`
-- **Content-Type:** `multipart/form-data`
-- **Payload:**
-    - `file`: Binary (PDF)
-    - `session_id`: String (UUID recommended)
-- **Success Response:**
-    - **Code:** 200
-    - **Content:** `{ "status": "success", "file_name": "contract.pdf" }`
+Uploads one or more PDF files to a specific session.
 
-### List Files
-Returns a list of all files uploaded for a specific session.
+**Request Body**: `multipart/form-data`
+- `files`: List of files (PDF only).
+- `session_id`: A unique string identifying the user session.
 
-- **Endpoint:** `GET /files/{session_id}`
-- **Success Response:**
-    - **Code:** 200
-    - **Content:** `[{ "file_name": "contract.pdf", "upload_time": "..." }]`
+**Response**:
+```json
+[
+  {
+    "file_id": "string",
+    "status": "processing"
+  }
+]
+```
 
-### Delete File
-Removes a specific document from the vector store and session.
+### List Documents
+`GET /v1/documents`
 
-- **Endpoint:** `DELETE /files/{file_id}`
-- **Success Response:**
-    - **Code:** 200
-    - **Content:** `{ "message": "File deleted successfully" }`
+Retrieves a list of all processed documents for the given session.
 
----
+**Query Parameters**:
+- `session_id`: (string) Required.
+
+**Response**:
+```json
+[
+  {
+    "doc_name": "Contract.pdf",
+    "page_count": 12
+  }
+]
+```
 
 ## 2. Chat Interface
 
-### Query Documents
-Ask questions based on the uploaded documents in the session.
+### Send Message
+`POST /v1/chat`
 
-- **Endpoint:** `POST /chat`
-- **Payload:**
-  ```json
-  {
-    "session_id": "uuid-v4-string",
-    "message": "What is the termination clause in the contract?",
-    "history": [
-      {"role": "user", "content": "Hello"},
-      {"role": "assistant", "content": "Hi! How can I help with your docs?"}
-    ]
-  }
-  ```
-- **Success Response:**
-  - **Code:** 200
-  - **Content:**
-    ```json
+Sends a query to the AI based on the uploaded documents.
+
+**Request Body**:
+```json
+{
+  "query": "What is the termination clause?",
+  "session_id": "uuid-string",
+  "history": [
+    {"role": "user", "content": "Hello"},
+    {"role": "assistant", "content": "Hi, how can I help with your documents?"}
+  ]
+}
+```
+
+**Response**:
+```json
+{
+  "answer": "The termination clause is located in section 4.2... [Contract.pdf - Page 5]",
+  "sources": [
     {
-      "answer": "The termination clause is found on page 12... [contract.pdf - Page 12]",
-      "sources": [
-        { "file_name": "contract.pdf", "page": 12 }
-      ]
+      "doc_name": "Contract.pdf",
+      "page_number": 5
     }
-    ```
+  ]
+}
+```
 
----
-
-## Error Handling
-
-| Code | Description |
-| :--- | :--- |
-| 400 | Bad Request (Missing file or session_id) |
-| 404 | Session not found (No documents uploaded) |
-| 500 | Internal Server Error (Gemini API failure or processing error) |
+## 3. Error Codes
+- `400 Bad Request`: Unsupported file format or missing parameters.
+- `404 Not Found`: Session ID or document not found.
+- `500 Internal Server Error`: LLM or Vector Store processing failure.
