@@ -1,9 +1,10 @@
 fastapi
 uvicorn
 python-multipart
-pydantic-settings
 langchain
 langchain-google-genai
 langchain-community
 faiss-cpu
 pymupdf
+cachetools
+pydantic
