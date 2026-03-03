@@ -1,40 +1,47 @@
-import os
-from typing import List
-from langchain_community.vectorstores import FAISS
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain.docstore.document import Document
+import chromadb
+from chromadb.utils import embedding_functions
+from app.core.config import settings
+from typing import List, Dict, Any
+import uuid
 
 class VectorStoreService:
-    def __init__(self, api_key: str):
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001", 
-            google_api_key=api_key
+    def __init__(self):
+        self.client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIRECTORY)
+        self.embedding_fn = embedding_functions.OpenAIEmbeddingFunction(
+            api_key=settings.OPENAI_API_KEY,
+            model_name="text-embedding-3-small"
         )
-        self.storage_path = "storage/indices"
-        os.makedirs(self.storage_path, exist_ok=True)
-
-    def _get_index_path(self, session_id: str) -> str:
-        return os.path.join(self.storage_path, f"{session_id}")
-
-    def add_documents(self, session_id: str, documents: List[Document]):
-        index_path = self._get_index_path(session_id)
-        
-        if os.path.exists(index_path):
-            vectorstore = FAISS.load_local(
-                index_path, self.embeddings, allow_dangerous_deserialization=True
-            )
-            vectorstore.add_documents(documents)
-        else:
-            vectorstore = FAISS.from_documents(documents, self.embeddings)
-        
-        vectorstore.save_local(index_path)
-
-    def similarity_search(self, session_id: str, query: str, k: int = 5) -> List[Document]:
-        index_path = self._get_index_path(session_id)
-        if not os.path.exists(index_path):
-            return []
-        
-        vectorstore = FAISS.load_local(
-            index_path, self.embeddings, allow_dangerous_deserialization=True
+        self.collection = self.client.get_or_create_collection(
+            name="docuchat_collection",
+            embedding_function=self.embedding_fn
         )
-        return vectorstore.similarity_search(query, k=k)
+
+    def add_documents(self, chunks: List[str], metadatas: List[Dict[str, Any]], session_id: str):
+        ids = [str(uuid.uuid4()) for _ in range(len(chunks))]
+        # Add session_id to every metadata entry for isolation
+        for meta in metadatas:
+            meta["session_id"] = session_id
+            
+        self.collection.add(
+            documents=chunks,
+            metadatas=metadatas,
+            ids=ids
+        )
+
+    def query(self, query_text: str, session_id: str, n_results: int = 5):
+        results = self.collection.query(
+            query_texts=[query_text],
+            n_results=n_results,
+            where={"session_id": session_id}
+        )
+        return results
+
+    def delete_by_filename(self, filename: str, session_id: str):
+        self.collection.delete(
+            where={
+                "$and": [
+                    {"filename": filename},
+                    {"session_id": session_id}
+                ]
+            }
+        )
