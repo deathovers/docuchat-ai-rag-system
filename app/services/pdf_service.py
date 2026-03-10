@@ -1,32 +1,33 @@
 import fitz  # PyMuPDF
-from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema import Document
 from typing import List
-import io
+from app.core.config import settings
 
 class PDFService:
     def __init__(self):
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=100,
-            separators=["\n\n", "\n", " ", ""]
+            chunk_size=settings.CHUNK_SIZE,
+            chunk_overlap=settings.CHUNK_OVERLAP,
+            length_function=len,
         )
 
-    def extract_documents(self, file_content: bytes, filename: str) -> List[Document]:
+    def process_pdf(self, file_bytes: bytes, filename: str) -> List[Document]:
+        """Extracts text from PDF and splits into chunks with metadata."""
         documents = []
-        doc = fitz.open(stream=file_content, filetype="pdf")
-        
-        for page_num, page in enumerate(doc):
-            text = page.get_text()
-            if text.strip():
-                metadata = {
-                    "file_name": filename,
-                    "page_number": page_num + 1
-                }
-                # Split text into chunks while keeping metadata
+        with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+            for page_num, page in enumerate(doc, start=1):
+                text = page.get_text()
+                if not text.strip():
+                    continue
+                
                 chunks = self.text_splitter.split_text(text)
                 for chunk in chunks:
-                    documents.append(Document(page_content=chunk, metadata=metadata))
-        
-        doc.close()
+                    documents.append(Document(
+                        page_content=chunk,
+                        metadata={
+                            "file_name": filename,
+                            "page_number": page_num
+                        }
+                    ))
         return documents
