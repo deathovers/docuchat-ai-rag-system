@@ -1,74 +1,76 @@
 # DocuChat AI
 
-DocuChat AI is a Multi-Document RAG (Retrieval-Augmented Generation) Assistant that allows users to upload multiple PDF documents and have a conversational interaction with their content. The system ensures strict grounding, meaning it only answers based on the provided documents and provides precise citations (Filename and Page Number).
+DocuChat AI is a high-performance Retrieval-Augmented Generation (RAG) application that allows users to upload multiple PDF documents and interact with them through a conversational interface. The system is designed for accuracy, providing context-grounded answers with precise page-level citations.
 
 ## 🚀 Features
 
-- **Multi-PDF Ingestion**: Upload and process multiple PDF files simultaneously.
-- **Session Isolation**: Your documents and chats are isolated using unique session IDs.
-- **Strict Grounding**: The AI is instructed to only use the provided context to prevent hallucinations.
-- **Verifiable Citations**: Every claim made by the AI includes a reference to the source document and page number.
-- **Real-time Chat**: Responsive React-based interface with Markdown support.
+- **Multi-Document Support:** Upload up to 10 PDFs per session.
+- **Context-Grounded RAG:** Answers are strictly derived from the uploaded content to prevent hallucinations.
+- **Page-Level Citations:** Every response includes the specific file name and page number used to generate the answer.
+- **High-Performance Retrieval:** Utilizes **FAISS** (Facebook AI Similarity Search) for lightning-fast document indexing and search.
+- **Robust Processing:** Implements document-level truncation and structured LLM outputs for reliable performance.
+- **Session-Based Privacy:** All data is stored in-memory and cleared upon session termination.
 
 ## 🛠️ Tech Stack
 
-- **Backend**: FastAPI (Python 3.9+)
-- **Frontend**: React, Tailwind CSS, TypeScript
-- **LLM & Embeddings**: Google Gemini 1.5 (Flash/Pro)
-- **Vector Database**: FAISS (Local persistence per session)
-- **PDF Processing**: PyMuPDF (fitz)
-
-## 📋 Prerequisites
-
-- Python 3.9 or higher
-- Node.js 18+ and npm
-- Google AI Studio API Key (for Gemini)
-
-## 🔧 Installation
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/your-repo/docuchat-ai.git
-cd docuchat-ai
-```
-
-### 2. Backend Setup
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Create a `.env` file in the `backend` directory:
-```env
-GOOGLE_API_KEY=your_gemini_api_key_here
-```
-
-Run the server:
-```bash
-uvicorn app.main:app --reload
-```
-
-### 3. Frontend Setup
-```bash
-cd ../frontend
-npm install
-```
-
-Run the development server:
-```bash
-npm run dev
-```
+- **Backend:** Python 3.9+, FastAPI
+- **Orchestration:** LangChain
+- **LLM:** OpenAI GPT-4o
+- **Embeddings:** OpenAI `text-embedding-3-small`
+- **Vector Database:** FAISS
+- **PDF Parsing:** PyMuPDF (fitz) / PDFPlumber
+- **Token Management:** Tiktoken
 
 ## 🏗️ Architecture
 
-1.  **Ingestion Layer**: PDFs are parsed using PyMuPDF. Text is extracted page-by-page to preserve metadata.
-2.  **Vector Store**: Text chunks are converted into embeddings using Gemini and stored in a session-specific FAISS index.
-3.  **Retrieval**: When a user asks a question, the system performs a similarity search against the session's FAISS index.
-4.  **Generation**: The retrieved context and the user's query are sent to Gemini with a strict system prompt to generate a grounded response.
+The system follows a standard RAG pipeline with enhanced reliability features:
 
-## ⚠️ Limitations
-- **No OCR**: Scanned images or PDFs without a text layer cannot be read.
-- **PDF Only**: Currently only supports `.pdf` files.
-- **Stateless MVP**: Vector indices are stored locally; clearing the `storage/` directory or changing session IDs will reset the context.
+1.  **Ingestion:** PDFs are uploaded via a FastAPI endpoint.
+2.  **Extraction & Chunking:** Text is extracted with page metadata and split into chunks (500-1000 tokens) using recursive character splitting with 10% overlap.
+3.  **Vectorization:** Chunks are converted into embeddings and stored in a session-specific FAISS index.
+4.  **Retrieval:** User queries are embedded and used to find the top-k relevant chunks (relevance threshold: 0.5).
+5.  **Context Construction:** Chunks are assembled into a prompt, ensuring no "destructive truncation" occurs by calculating tokens at the document level.
+6.  **Structured Generation:** The LLM uses OpenAI Structured Outputs to return a JSON response containing the answer and the IDs of the chunks used.
+7.  **Source Mapping:** The system maps chunk IDs back to metadata to provide citations.
+
+## 💻 Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-repo/docuchat-ai.git
+    cd docuchat-ai
+    ```
+
+2.  **Create a virtual environment:**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
+
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Set up Environment Variables:**
+    Create a `.env` file in the root directory:
+    ```env
+    OPENAI_API_KEY=your_openai_api_key_here
+    ```
+
+## 🏃 Usage
+
+1.  **Start the server:**
+    ```bash
+    uvicorn app.main:app --reload
+    ```
+
+2.  **Access the API:**
+    The API will be available at `http://127.0.0.1:8000`.
+    You can view the interactive Swagger documentation at `http://127.0.0.1:8000/docs`.
+
+## 🛡️ Limitations
+
+- **No OCR:** Only selectable text PDFs are supported.
+- **Volatile Storage:** FAISS indices and chat history are cleared when the session ends.
+- **Token Limit:** Context is capped at 4,000 tokens to manage LLM costs and performance.
