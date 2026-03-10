@@ -1,27 +1,19 @@
 from typing import Dict
 from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
 
 class SessionManager:
     def __init__(self):
-        # session_id -> FAISS index
-        self.indices: Dict[str, FAISS] = {}
+        # In-memory storage for FAISS indices keyed by session_id
+        self.sessions: Dict[str, FAISS] = {}
 
-    def get_index(self, session_id: str) -> FAISS:
-        return self.indices.get(session_id)
+    def set_vector_store(self, session_id: str, vector_store: FAISS):
+        self.sessions[session_id] = vector_store
 
-    def set_index(self, session_id: str, index: FAISS):
-        self.indices[session_id] = index
-
-    def add_to_index(self, session_id: str, index: FAISS):
-        if session_id in self.indices:
-            # FAISS merge or add
-            self.indices[session_id].merge_from(index)
-        else:
-            self.indices[session_id] = index
+    def get_vector_store(self, session_id: str) -> FAISS:
+        return self.sessions.get(session_id)
 
     def clear_session(self, session_id: str):
-        if session_id in self.indices:
-            del self.indices[session_id]
+        if session_id in self.sessions:
+            del self.sessions[session_id]
 
 session_manager = SessionManager()
