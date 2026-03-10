@@ -1,29 +1,35 @@
-# DocuChat AI - User Guide
+# DocuChat AI User Guide
 
 Welcome to **DocuChat AI**! This guide will help you get the most out of your multi-document assistant.
 
-## 🌟 Getting Started
-When you open the application, a unique session is automatically created for you. This ensures that your documents remain private and isolated from other users.
+## 🌟 Introduction
+DocuChat AI allows you to "talk" to your PDF files. Instead of searching through hundreds of pages, you can simply ask questions and get answers backed by citations from your documents.
 
-## 📂 Managing Documents
-1.  **Upload**: Use the sidebar on the left to upload your PDF files. You can select multiple files at once.
-2.  **Processing**: Once uploaded, the system will "ingest" the documents. This involves reading the text and creating a searchable index.
-3.  **View List**: Your uploaded documents will appear in the sidebar list.
+## 🛠 How to Use
 
-## 💬 Chatting with your Documents
-Type your questions in the chat box at the bottom of the screen.
+### 1. Uploading Documents
+- Select up to **10 PDF files** at a time.
+- Ensure your PDFs contain **selectable text**. Scanned images (without OCR) are currently not supported.
+- Once uploaded, the system will process the text and prepare it for querying. This usually takes less than 10 seconds for a standard 50-page document.
 
-### Tips for better results:
-- **Be Specific**: Instead of "What does this say?", try "What are the key responsibilities of the contractor mentioned in the agreement?"
-- **Follow-up**: The AI remembers the last few messages, so you can ask follow-up questions like "Can you elaborate on the second point?"
+### 2. Asking Questions
+- Type your question in the chat interface.
+- Be specific! Instead of "What does this say?", try "What are the key responsibilities of the project manager mentioned in the contract?"
+- The AI will only answer based on the documents you provided.
 
-## 🔍 Understanding Citations
-DocuChat AI is designed to be transparent. Every time it provides information from your documents, it will include a citation in the format:
-`[Document Name - Page X]`
+### 3. Understanding Citations
+- Every answer provided by DocuChat AI includes **Sources**.
+- Each source lists the **File Name** and the **Page Number**.
+- You can use these citations to verify the AI's response against the original document.
 
-If the AI says "The answer was not found in the uploaded documents," it means the information is not present in the files you provided. This is a safety feature to prevent the AI from making things up (hallucinating).
+### 4. Session Management
+- **Privacy First:** Your documents and chat history are stored in a "volatile" state. This means once you refresh your browser or close the session, all data is permanently deleted from our server.
+- If you want to start over with new documents, simply refresh the page.
 
-## 🚫 Important Limitations
-- **Text-Based PDFs Only**: The system cannot read text inside images or scanned documents (No OCR). Ensure your PDFs have selectable text.
-- **File Size**: Very large PDFs (e.g., 500+ pages) may take longer to process.
-- **Session Persistence**: If you clear your browser data or the server restarts, you may need to re-upload your documents.
+## ⚠️ Important Tips
+- **"Answer Not Found":** If the AI says it cannot find the answer, it means the information is likely not in the uploaded PDFs. The system is designed to be "strict" to avoid making things up (hallucinations).
+- **Document Quality:** Clear, text-based PDFs yield the best results. Complex tables or highly stylized layouts may occasionally affect extraction accuracy.
+
+## ❓ Troubleshooting
+- **Upload Failed:** Ensure the file is a PDF and under the size limit (if applicable).
+- **Slow Responses:** Large documents or complex queries may take a few seconds to process as the AI scans the context.
